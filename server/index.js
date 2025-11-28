@@ -35,5 +35,15 @@ app.post("/api/parse-resume", upload.single("resume"), async (req, res) => {
   }
 });
 
+app.post("/api/generate-cover-letter", async (req, res) => {
+  const { resumeText, jobDescription } = req.body;
+  try {
+    const letter = await generateCoverLetter(resumeText, jobDescription);
+    res.json({ coverLetter: letter });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
