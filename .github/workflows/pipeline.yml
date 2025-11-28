@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd server_python
+          cd server
           pip install -r requirements.txt
           pip install pytest # Add pytest for testing
 
