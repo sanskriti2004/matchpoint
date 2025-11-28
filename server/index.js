@@ -3,6 +3,7 @@ const cors = require("cors");
 const multer = require("multer");
 const pdf = require("pdf-parse");
 const fs = require("fs");
+const { createPdf } = require("./pdfService");
 const { generateResumeFromGithub } = require("./aiService");
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -59,6 +60,22 @@ app.post("/api/generate-resume", async (req, res) => {
   try {
     const resumeContent = await generateResumeFromGithub(githubData);
     res.json({ resumeContent });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/download-pdf", async (req, res) => {
+  const { resumeContent } = req.body;
+  try {
+    const pdfBuffer = await createPdf(resumeContent);
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Length": pdfBuffer.length,
+    });
+
+    res.send(pdfBuffer);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
