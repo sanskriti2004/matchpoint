@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+pypdf
+langchain
+langchain-ollama
+langchain-community
+chromadb
+sentence-transformers
+httpx
+xhtml2pdf
+numpy<2.0.0

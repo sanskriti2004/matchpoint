@@ -1,23 +1,35 @@
-version: "3.8"
 services:
   backend:
-    build: ./server
+    build:
+      context: ./server # server folder contains Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     environment:
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # Use host.docker.internal to access Ollama running on host
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Linux support
     volumes:
+      # Mount code for live reloading
       - ./server:/app
-      - /app/node_modules
+      # Do not mount venv from host; create venv inside container instead
+    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+    working_dir: /app
+    # backend should NOT depend on frontend (remove cycle)
 
   frontend:
-    build: ./client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:5000
+    depends_on:
+      - backend
     volumes:
       - ./client:/app
       - /app/node_modules
-    depends_on:
-      - backend
-# Note: We assume Ollama is running on the Host machine.
-# host.docker.internal allows containers to talk to your computer's localhost.
+      - /app/.next
+    working_dir: /app

@@ -2,31 +2,74 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-  build-and-test:
+  # Job 1: Check Python Backend
+  backend-check:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: |
+          cd server_python
+          pip install -r requirements.txt
+          pip install pytest # Add pytest for testing
+
+      # Optional: Add a simple test file later to verify imports work
+      # - name: Run Tests
+      #   run: |
+      #     cd server_python
+      #     pytest
+
+  # Job 2: Check Frontend Build
+  frontend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18"
 
-      - name: Install Dependencies (Server)
+      - name: Install and Build
         run: |
-          cd server
+          cd client
           npm install
+          npm run build
 
-      # Add Linting or Testing steps here
-      # - name: Run Tests
-      #   run: npm test
+  # Job 3: Verify Docker Builds (Integration)
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend-check, frontend-check]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Build Docker Image
-        run: |
-          docker build -t my-resume-backend ./server
-          # Login and Push to DockerHub logic would go here
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Backend Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./server_python
+          push: false # Set to true if you add Docker Hub credentials later
+          tags: my-resume-backend:latest
+
+      - name: Build Frontend Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./client
+          push: false
+          tags: my-resume-frontend:latest
