@@ -3,7 +3,7 @@ const cors = require("cors");
 const multer = require("multer");
 const pdf = require("pdf-parse");
 const fs = require("fs");
-
+const { generateResumeFromGithub } = require("./aiService");
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
@@ -49,6 +49,16 @@ app.get("/api/github/:username", async (req, res) => {
   try {
     const data = await getGithubData(req.params.username);
     res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/generate-resume", async (req, res) => {
+  const { githubData } = req.body;
+  try {
+    const resumeContent = await generateResumeFromGithub(githubData);
+    res.json({ resumeContent });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

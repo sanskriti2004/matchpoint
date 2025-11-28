@@ -73,4 +73,34 @@ Output JSON format: {{ "score": number, "missing": [], "matching": [] }}
   }
 }
 
-module.exports = { generateCoverLetter, calculateATSScore, llm };
+async function generateResumeFromGithub(githubData) {
+  const template = `
+    You are an expert Resume Writer. 
+    Convert the following GitHub profile data into a professional resume text.
+    
+    GitHub Data: {data}
+    
+    Rules:
+    1. Organize into sections: Summary, Technical Skills, Projects.
+    2. Use the "Bio" for the Summary.
+    3. Use "Top Projects" to describe experience.
+    4. Infer skills based on the programming languages used in projects.
+    5. Output strictly in Markdown format.
+  `;
+
+  const prompt = PromptTemplate.fromTemplate(template);
+  const chain = prompt.pipe(llm);
+
+  // Convert JSON to string for the prompt
+  const dataString = JSON.stringify(githubData);
+
+  const response = await chain.invoke({ data: dataString });
+  return response.content;
+}
+
+module.exports = {
+  generateCoverLetter,
+  calculateATSScore,
+  generateResumeFromGithub,
+  llm,
+};
