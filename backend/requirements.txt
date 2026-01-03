@@ -12,3 +12,4 @@ dotenv
 redis
 pytest
 httpx
+requests
