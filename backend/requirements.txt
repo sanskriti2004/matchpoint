@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+PyPDF2
+python-docx
+sentence-transformers
+pinecone
+langchain
+langchain-text-splitters
+dotenv
+redis
+pytest
+httpx
