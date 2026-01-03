@@ -7,22 +7,22 @@ from utils import extract_text, chunk_text, generate_embeddings, init_pinecone, 
 import uuid
 import json
 import redis
+import os
 
 app = FastAPI(title="Resume-Job Matching API", version="1.0.0")
 
-# CORS middleware
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Add your frontend URL
+    allow_origins=[frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Redis cache
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+redis_client = redis.from_url(redis_url, decode_responses=True)
 
-# Initialize Pinecone
 try:
     index = init_pinecone()
 except Exception as e:
@@ -30,7 +30,6 @@ except Exception as e:
     index = None
 
 def cache_set(key: str, value, expire: int = 3600):
-    """Set cache with JSON serialization for complex types."""
     try:
         if isinstance(value, (list, dict)):
             redis_client.set(key, json.dumps(value), ex=expire)
@@ -40,7 +39,6 @@ def cache_set(key: str, value, expire: int = 3600):
         print(f"Redis cache set failed for key {key}: {e}")
 
 def cache_get(key: str):
-    """Get cache with JSON deserialization."""
     try:
         value = redis_client.get(key)
         if value is None:
@@ -83,7 +81,6 @@ async def upload_resume(file: UploadFile = File(...)):
         else:
             print("Pinecone not available, skipping storage")
 
-        # Cache processed data
         cache_set(f"text:resume:{resume_id}", text)
         cache_set(f"chunks:resume:{resume_id}", chunks)
         cache_set(f"embeddings:resume:{resume_id}", embeddings)
@@ -112,7 +109,7 @@ async def upload_job(
         content = await file.read()
         text = extract_text(content, file.filename)
     else:
-        content = text.encode('utf-8')  # For consistency
+        content = text.encode('utf-8')  
     
     try:
         chunks = chunk_text(text)
@@ -120,7 +117,6 @@ async def upload_job(
         if index:
             store_embeddings(index, embeddings, chunks, job_id, "job")
         
-        # Cache processed data
         cache_set(f"text:job:{job_id}", text)
         cache_set(f"chunks:job:{job_id}", chunks)
         cache_set(f"embeddings:job:{job_id}", embeddings)
@@ -140,7 +136,6 @@ def match(request: MatchRequest):
     if not job_text or not job_embeddings:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    # Retrieve relevant resume chunks from Pinecone
     if index:
         results = index.query(vector=job_embeddings[0], top_k=10, include_metadata=True, filter={"doc_type": "resume"})
         retrieved_texts = [match["metadata"]["text"] for match in results["matches"]]
@@ -166,16 +161,14 @@ Recommend learning resources for missing skills as array of objects with skill a
 Output ONLY valid JSON with keys: match_score (number), matching_skills (array), missing_skills (array), ats_suggestions (array), learning_resources (array of objects with skill and resource).
 """
 
-    print(f"LLM Prompt: {prompt[:500]}...")  # Log first 500 chars
+    print(f"LLM Prompt: {prompt[:500]}...") 
 
     try:
         llm_response = call_openrouter(prompt)
-        print(f"LLM Response: {llm_response[:500]}...")  # Log response
+        print(f"LLM Response: {llm_response[:500]}...")  
 
-        # Try to parse JSON directly
         result = json.loads(llm_response)
     except json.JSONDecodeError:
-        # Try to extract JSON from response
         import re
         json_match = re.search(r'\{.*\}', llm_response, re.DOTALL)
         if json_match:
@@ -188,7 +181,6 @@ Output ONLY valid JSON with keys: match_score (number), matching_skills (array),
 
         if not result:
             print(f"Failed to parse LLM response as JSON: {llm_response}")
-            # Dynamic fallback based on job text
             import random
             base_score = 70 + random.randint(0, 20)
             skills = ["Python", "JavaScript", "React", "Node.js", "SQL"]
@@ -203,7 +195,6 @@ Output ONLY valid JSON with keys: match_score (number), matching_skills (array),
             }
     except Exception as e:
         print(f"LLM call failed: {e}")
-        # Dynamic fallback
         import random
         base_score = 60 + random.randint(0, 30)
         skills = ["Python", "JavaScript", "React", "Node.js", "SQL", "Docker", "AWS"]
@@ -217,15 +208,12 @@ Output ONLY valid JSON with keys: match_score (number), matching_skills (array),
             "learning_resources": [{"skill": skill, "resource": f"https://www.youtube.com/results?search_query={skill}+tutorial"} for skill in missing]
         }
 
-    # Cache the result
     cache_set(f"result:{resume_id}:{job_id}", result)
 
     return MatchResult(**result)
 
 @app.get("/results/{job_id}", response_model=MatchResult)
 def get_results(job_id: str):
-    # TODO: Retrieve cached results
-    # For now, return stub data
     return MatchResult(
         match_score=85,
         matching_skills=["Python", "FastAPI"],
