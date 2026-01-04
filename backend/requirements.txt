@@ -4,11 +4,12 @@ pydantic
 python-multipart
 PyPDF2
 python-docx
-sentence-transformers
-pinecone
-langchain
+sentence-transformers[cpu]
+torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
+pinecone-client
+langchain-core
 langchain-text-splitters
-dotenv
+python-dotenv
 redis
 pytest
 httpx
