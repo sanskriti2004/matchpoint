@@ -5,7 +5,7 @@ python-multipart
 PyPDF2
 python-docx
 sentence-transformers[cpu]
-torch==2.0.1+cpu
+torch==2.1.0
 pinecone-client
 langchain-core
 langchain-text-splitters
