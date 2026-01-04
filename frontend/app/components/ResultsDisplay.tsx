@@ -201,13 +201,17 @@ function ComparisonResult({ result }: { result: MatchResult }) {
 }
 
 function getScoreColor(score: number) {
-  if (score >= 80) return "text-green-600 bg-green-100";
-  if (score >= 60) return "text-yellow-600 bg-yellow-100";
-  return "text-red-600 bg-red-100";
+  if (score >= 85) return "text-green-600 bg-green-100"; // Strong Match
+  if (score >= 70) return "text-blue-600 bg-blue-100"; // Good Match
+  if (score >= 50) return "text-yellow-600 bg-yellow-100"; // Moderate Match
+  if (score >= 30) return "text-orange-600 bg-orange-100"; // Weak Match
+  return "text-red-600 bg-red-100"; // Very Poor Match
 }
 
 function getScoreLabel(score: number) {
-  if (score >= 80) return "Excellent";
-  if (score >= 60) return "Good";
-  return "Needs Improvement";
+  if (score >= 85) return "Strong";
+  if (score >= 70) return "Good";
+  if (score >= 50) return "Moderate";
+  if (score >= 30) return "Weak";
+  return "Very Poor";
 }
