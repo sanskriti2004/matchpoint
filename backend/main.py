@@ -141,7 +141,6 @@ def match(request: MatchRequest):
     resume_id = request.resume_id
     job_id = request.job_id
 
-    # Check cache first
     cache_key = f"result:{resume_id}:{job_id}"
     cached_result = cache_get(cache_key)
     if cached_result:
@@ -158,7 +157,6 @@ def match(request: MatchRequest):
     if not resume_text:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    # Retrieve relevant resume chunks from Pinecone
     retrieved_texts = []
     if index:
         try:
@@ -180,7 +178,6 @@ def match(request: MatchRequest):
     print("\nResume Context:")
     print(context)
 
-    # Create a more dynamic prompt based on job content
     prompt = f"""
 You are an ATS-grade evaluator. Analyze the FULL job description and the FULL resume text provided.
 
@@ -237,7 +234,6 @@ Now perform the analysis and output the JSON only.
     print(f"LLM Prompt length: {len(prompt)} characters")
     print(f"Cache key: {cache_key}")
 
-    # Check if OpenRouter API key is configured
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         print("WARNING: OPENROUTER_API_KEY not set - will use fallback analysis")
@@ -280,10 +276,8 @@ Now perform the analysis and output the JSON only.
 
 
 def generate_ats_accurate_match(resume_text: str, job_text: str):
-    """ATS-grade resume-job matching with strict accuracy requirements"""
     import re
 
-    # Comprehensive skill database with synonyms
     skill_database = {
         "Python": ["python", "py"],
         "JavaScript": ["javascript", "js", "ecmascript"],
@@ -317,39 +311,31 @@ def generate_ats_accurate_match(resume_text: str, job_text: str):
     }
 
     def extract_skills(text: str) -> set:
-        """Extract skills from text using exact matching and synonyms"""
         text_lower = text.lower()
         found_skills = set()
 
         for skill, synonyms in skill_database.items():
-            # Check if any synonym appears in the text
             if any(synonym in text_lower for synonym in synonyms):
                 found_skills.add(skill)
 
         return found_skills
 
-    # Extract skills from resume and job description
     resume_skills = extract_skills(resume_text)
     job_skills = extract_skills(job_text)
 
-    # Calculate matching and missing skills
     matching_skills = resume_skills.intersection(job_skills)
     missing_skills = job_skills - resume_skills
 
-    # Calculate match percentage
     if not job_skills:
         match_percentage = 0
     else:
         match_percentage = (len(matching_skills) / len(job_skills)) * 100
 
-    # Apply strict scoring rules
-    if len(missing_skills) > len(job_skills) / 2:  # More than 50% missing
-        match_percentage = min(match_percentage, 49)  # Cap at 49%
+    if len(missing_skills) > len(job_skills) / 2:  
+        match_percentage = min(match_percentage, 49)  
 
-    # Convert to integer score
     match_score = int(round(match_percentage))
 
-    # Generate ATS improvement suggestions based on missing skills
     ats_suggestions = []
     if missing_skills:
         ats_suggestions.append("Add missing technical skills to your resume keywords")
@@ -362,16 +348,15 @@ def generate_ats_accurate_match(resume_text: str, job_text: str):
         ats_suggestions.append("Use exact terminology from job description in your resume")
         ats_suggestions.append("Quantify experience with specific tools and technologies")
 
-    # Generate learning resources (1-2 per missing skill)
     learning_resources = []
-    for skill in list(missing_skills)[:4]:  # Limit to top 4 missing skills
+    for skill in list(missing_skills)[:4]:  
         resources = [
             f"https://www.youtube.com/results?search_query={skill.replace(' ', '+')}+tutorial",
             f"https://www.udemy.com/topic/{skill.lower().replace(' ', '-')}/"
         ]
         learning_resources.append({
             "skill": skill,
-            "resource": resources[0]  # Primary resource
+            "resource": resources[0] 
         })
 
     result = {
@@ -387,6 +372,7 @@ def generate_ats_accurate_match(resume_text: str, job_text: str):
 
 @app.get("/results/{job_id}", response_model=MatchResult)
 def get_results(job_id: str):
-    # This endpoint expects resume_id:job_id format
-    # For now, return an error since this endpoint isn't properly implemented
     raise HTTPException(status_code=501, detail="This endpoint is not implemented. Use POST /match instead.")
+@app.get("/ping")
+def ping():
+    return {"status": "alive"}
