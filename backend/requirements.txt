@@ -5,8 +5,8 @@ python-multipart
 PyPDF2
 python-docx
 sentence-transformers[cpu]
-torch>=2.5.0
-pinecone-client
+torch
+pinecone
 langchain-core
 langchain-text-splitters
 python-dotenv
