@@ -1,27 +1,18 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.12",
-        "maxLambdaSize": "15mb"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
-    }
-  ],
   "functions": {
     "api/index.py": {
+      "runtime": "python3.12",
       "maxDuration": 30,
       "memory": 1024
     }
   },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.py"
+    }
+  ],
   "env": {
     "SENTENCE_TRANSFORMERS_HOME": "/tmp/sentence_transformers"
   }
