@@ -11,10 +11,10 @@ import os
 
 app = FastAPI(title="Resume-Job Matching API", version="1.0.0")
 
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+origins = ["https://matchpoint-frontend-alpha.vercel.app", "http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_url],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
