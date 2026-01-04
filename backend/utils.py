@@ -8,7 +8,6 @@ from langchain_text_splitters import CharacterTextSplitter
 from pinecone import Pinecone
 import os
 
-# Global model cache for Vercel serverless optimization
 _model_cache = None
 
 def get_embedding_model():
@@ -62,7 +61,6 @@ def generate_embeddings(chunks: list[str]) -> list[list[float]]:
         return embeddings.tolist()
     except Exception as e:
         print(f"Embedding generation failed: {e}, using dummy embeddings")
-        # Use 1024 dimensions to match existing Pinecone index
         return [[0.1] * 1024 for _ in chunks]
 
 def init_pinecone():
@@ -92,7 +90,7 @@ def store_embeddings(index, embeddings: list[list[float]], chunks: list[str], do
             print("2. Create new index with dimension 1024 (current model) or 384 (optimized model)")
             print("3. Update EMBEDDING_MODEL env var to 'all-MiniLM-L6-v2' for 384 dimensions")
             print("System will continue working with Redis caching only.")
-            return False  # Indicate failure but don't raise
+            return False 
         else:
             print(f"Failed to store embeddings in Pinecone: {e}")
             raise
