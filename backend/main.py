@@ -23,11 +23,12 @@ app.add_middleware(
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 redis_client = redis.from_url(redis_url, decode_responses=True)
 
-try:
-    index = init_pinecone()
-except Exception as e:
-    print(f"Failed to initialize Pinecone: {e}")
-    index = None
+def get_pinecone_index():
+    try:
+        return init_pinecone()
+    except Exception as e:
+        print(f"Failed to initialize Pinecone: {e}")
+        return None
 
 def cache_set(key: str, value, expire: int = 3600):
     try:
@@ -74,6 +75,7 @@ async def upload_resume(file: UploadFile = File(...)):
         embeddings = generate_embeddings(chunks)
         print(f"Embeddings shape: {len(embeddings)} x {len(embeddings[0]) if embeddings else 0}")
 
+        index = get_pinecone_index()
         if index:
             print("Storing in Pinecone...")
             try:
@@ -120,6 +122,7 @@ async def upload_job(
     try:
         chunks = chunk_text(text)
         embeddings = generate_embeddings(chunks)
+        index = get_pinecone_index()
         if index:
             try:
                 success = store_embeddings(index, embeddings, chunks, job_id, "job")
@@ -158,6 +161,7 @@ def match(request: MatchRequest):
         raise HTTPException(status_code=404, detail="Resume not found")
 
     retrieved_texts = []
+    index = get_pinecone_index()
     if index:
         try:
             results = index.query(vector=job_embeddings[0], top_k=10, include_metadata=True, filter={"doc_type": "resume"})
@@ -208,9 +212,19 @@ Instructions (follow exactly, no exceptions):
    - Provide concise, actionable suggestions derived ONLY from missing or weak areas found.
    - Do NOT suggest adding skills that are not in the job description.
 7. Learning resources:
-   - For each missing skill, return an object:
-     {{ "skill": "<skill>", "resource": "<real URL or empty string>" }}
-   - Do NOT fabricate URLs. If unsure, use an empty string.
+   - For EACH missing skill, return an object in EXACTLY this format:
+     {{
+       "skill": "<skill>",
+       "free_tutorial": "<youtube URL or empty string>",
+       "official_resource": "<official documentation URL or empty string>",
+       "explore": "<exploration/discovery URL such as daily.dev or similar, or empty string>"
+     }}
+   - Examples of valid explore sources:
+     - https://app.daily.dev/tags/<skill>
+     - reputable blogs, curated learning hubs, or developer communities
+   - URLs MUST be real and verifiable.
+   - If unsure about any resource, return an empty string for that field.
+   - Do NOT fabricate or guess URLs.
 8. Output rules:
    - Output ONLY valid JSON.
    - Use EXACTLY these keys and no others:
@@ -356,7 +370,9 @@ def generate_ats_accurate_match(resume_text: str, job_text: str):
         ]
         learning_resources.append({
             "skill": skill,
-            "resource": resources[0] 
+            "free_tutorial": resources[0], 
+            "official_resource": "",
+            "explore": ""
         })
 
     result = {
@@ -376,3 +392,9 @@ def get_results(job_id: str):
 @app.get("/ping")
 def ping():
     return {"status": "alive"}
+@app.get("/")
+def root():
+    return {
+        "status": "MatchPoint backend running",
+        "docs": "/docs"
+    }
