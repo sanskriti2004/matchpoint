@@ -9,50 +9,21 @@ A comprehensive AI-powered system that helps match resumes with job descriptions
 │   Frontend      │    │   Backend API   │    │   AI Services   │
 │   (Next.js)     │◄──►│   (FastAPI)     │◄──►│   (OpenRouter)  │
 │                 │    │                 │    │                 │
-│ • React UI      │    │ • Text Processing│    │ • LLM Analysis │
+│ • React UI      │    │ • Process Text  │    │ • LLM Analysis  │
 │ • File Upload   │    │ • Vector Search │    │ • ATS Scoring   │
-│ • Results Display│    │ • Caching       │    │                 │
+│ • Result Display│    │ • Caching       │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
                                  ▼
-                    ┌─────────────────┐    ┌─────────────────┐
-                    │   Vector DB     │    │   Cache Store   │
-                    │   (Pinecone)    │    │   (Redis)       │
-                    │                 │    │                 │
+                    ┌──────────────────┐    ┌─────────────────┐
+                    │   Vector DB      │    │   Cache Store   │
+                    │   (Pinecone)     │    │   (Redis)       │
+                    │                  │    │                 │
                     │ • Semantic Search│    │ • Fast Retrieval│
-                    │ • Resume Chunks │    │ • API Responses │
-                    └─────────────────┘    └─────────────────┘
+                    │ • Resume Chunks  │    │ • API Responses │
+                    └──────────────────┘    └─────────────────┘
 ```
-
-### Technology Choices & Rationale
-
-**Frontend - Next.js (TypeScript, TailwindCSS)**
-
-- **Why Next.js?** Provides server-side rendering, static generation, and API routes for optimal performance and SEO
-- **Why TypeScript?** Ensures type safety, better developer experience, and catches errors at compile time
-- **Why TailwindCSS?** Utility-first CSS framework for rapid UI development with consistent design system
-
-**Backend - FastAPI (Python)**
-
-- **Why FastAPI?** High-performance async web framework with automatic OpenAPI documentation, type validation, and excellent concurrency support
-- **Why Python?** Rich ecosystem for AI/ML libraries, natural language processing, and data science workloads
-
-**Vector Database - Pinecone**
-
-- **Why Pinecone?** Specialized vector database optimized for similarity search with high performance and scalability
-- **Use Case:** Stores resume text chunks (created by LangChain text splitters) as embeddings for semantic matching against job descriptions
-
-**Cache - Redis Cloud**
-
-- **Why Redis?** In-memory data structure store providing sub-millisecond response times for cached data
-- **Use Case:** Caches processed text, embeddings, and analysis results to reduce API calls and improve user experience
-
-**AI Services**
-
-- **Sentence Transformers (all-roberta-large-v1):** Converts text to high-dimensional vectors for semantic similarity comparison
-- **LangChain Text Splitters:** Intelligently chunks documents with overlap for optimal embedding and retrieval (1000 char chunks, 200 char overlap)
-- **OpenRouter API (Mistral-7B):** Provides access to multiple LLM providers for intelligent resume-job analysis
 
 ## Features
 
@@ -68,16 +39,15 @@ A comprehensive AI-powered system that helps match resumes with job descriptions
 - **Semantic Matching**: Vector embeddings using Hugging Face models (all-roberta-large-v1) with LangChain-powered text chunking for comprehensive document analysis
 - **AI Analysis**: LLM-powered analysis using OpenRouter (Mistral-7B) with ATS-accurate fallback
 - **ATS Optimization**: Targeted suggestions for resume improvement
-- **Learning Resources**: Tutorials and courses for missing skills
+- **Learning Resources**: Recommends free tutorials, official documentation and curated discovery link to explore the latest updates for missing skills
 - **Caching**: Redis for fast data retrieval
 - **Vector Search**: Pinecone for efficient similarity search
-- **Multi-Job Comparison**: Compare one resume against multiple jobs
 
 ## Tech Stack
 
 - **Backend**: FastAPI (Python)
 - **Frontend**: Next.js (TypeScript, TailwindCSS)
-- **AI**: Sentence Transformers (all-roberta-large-v1), LangChain Text Splitters, OpenRouter API (Mistral-7B)
+- **AI/ML**: Sentence Transformers (all-roberta-large-v1), LangChain Text Splitters, OpenRouter API (Mistral-7B)
 - **Vector DB**: Pinecone
 - **Cache**: Redis Cloud
 - **Deployment**: Vercel (Frontend) & Hugging Face Spaces (Backend)
@@ -88,8 +58,6 @@ A comprehensive AI-powered system that helps match resumes with job descriptions
 matchpoint/
 ├── README.md
 ├── backend/
-│   ├── api/
-│   │   └── index.py          # Serverless function entry point
 │   ├── Dockerfile            # Container configuration
 │   ├── main.py               # FastAPI application with endpoints
 │   ├── models.py             # Pydantic data models
@@ -118,15 +86,6 @@ matchpoint/
 - Python 3.11+ (matches Vercel runtime)
 - Node.js 18+
 - Git
-
-### Important Notes
-
-- **ATS-Grade Accuracy**: The system uses strict skill matching - only skills explicitly present in both resume and job description text are counted as matching. No assumptions or inferences are made.
-- **Text Chunking**: LangChain's CharacterTextSplitter divides resumes into 1000-character chunks with 200-character overlap, ensuring semantic search can find relevant skills and experience anywhere in the document.
-- **Scoring Rules**: If more than 50% of job-required skills are missing, the match score is capped at 49% (Needs Significant Improvement category).
-- **Pinecone Dimension Mismatch**: The system currently uses a 1024-dimension model (all-roberta-large-v1) to match existing indexes. For better performance, you can switch to a 384-dimension model by setting `EMBEDDING_MODEL=all-MiniLM-L6-v2` and recreating your Pinecone index.
-- **AI Analysis**: When OpenRouter API key is configured, LLM analysis is used.
-- **Graceful Degradation**: The system continues working with Redis caching even if Pinecone operations fail.
 
 ### Backend Setup
 
@@ -173,13 +132,6 @@ matchpoint/
    npm run dev
    ```
 
-### Redis Cloud Setup
-
-1. **Sign up for Redis Cloud** (free tier available)
-2. **Create a database**
-3. **Get the connection URL** (format: `redis://username:password@host:port`)
-4. **Add to environment variables**
-
 ## API Endpoints
 
 - `POST /upload/resume` - Upload and process resume file (PDF, DOCX, TXT)
@@ -197,7 +149,7 @@ All endpoints return JSON responses with appropriate HTTP status codes and error
 PINECONE_API_KEY=your_pinecone_api_key
 PINECONE_INDEX_NAME=matchpoint-index
 
-# OpenRouter API (Optional - enables AI analysis, falls back to text analysis if not set)
+# OpenRouter API 
 OPENROUTER_API_KEY=your_openrouter_api_key
 
 # Redis Cloud (Required for caching)
@@ -215,17 +167,3 @@ EMBEDDING_MODEL=sentence-transformers/all-roberta-large-v1
 ```env
 NEXT_PUBLIC_BACKEND_URL=https://your-backend.vercel.app
 ```
-
-### Common Issues
-
-- **Missing Dependencies**: Ensure all packages in `requirements.txt` are compatible with Python 3.12+
-- **Environment Variables**: All required variables must be set in Vercel dashboard
-- **CORS Issues**: Update `FRONTEND_URL` in backend environment variables after frontend deployment
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
