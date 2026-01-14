@@ -9,7 +9,12 @@ export interface MatchResult {
   matching_skills: string[];
   missing_skills: string[];
   ats_suggestions: string[];
-  learning_resources: { skill: string; resource: string }[];
+  learning_resources: {
+    skill: string;
+    free_tutorial: string;
+    official_resource: string;
+    explore: string;
+  }[];
 }
 
 // Define the possible stages for better UI feedback
