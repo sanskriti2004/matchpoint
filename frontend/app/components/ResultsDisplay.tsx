@@ -1,11 +1,20 @@
 "use client";
 
+import { useState } from "react";
+
+interface LearningResource {
+  skill: string;
+  free_tutorial: string;
+  official_resource: string;
+  explore: string;
+}
+
 interface MatchResult {
   match_score: number;
   matching_skills: string[];
   missing_skills: string[];
   ats_suggestions: string[];
-  learning_resources: { skill: string; resource: string }[];
+  learning_resources: LearningResource[];
 }
 
 interface ResultsDisplayProps {
@@ -13,6 +22,8 @@ interface ResultsDisplayProps {
 }
 
 export default function ResultsDisplay({ result }: ResultsDisplayProps) {
+  const [expandedSkills, setExpandedSkills] = useState<Set<string>>(new Set());
+
   if (!result) return null;
 
   const score = result.match_score;
@@ -20,6 +31,18 @@ export default function ResultsDisplay({ result }: ResultsDisplayProps) {
     if (score >= 80) return "bg-emerald-500";
     if (score >= 60) return "bg-amber-500";
     return "bg-rose-500";
+  };
+
+  const toggleSkill = (skill: string) => {
+    setExpandedSkills((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(skill)) {
+        newSet.delete(skill);
+      } else {
+        newSet.add(skill);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -30,9 +53,8 @@ export default function ResultsDisplay({ result }: ResultsDisplayProps) {
         </span>
         <div className="flex flex-col items-center">
           <span
-            className={`text-7xl font-light tracking-tighter ${
-              score >= 80 ? "text-zinc-900" : "text-zinc-700"
-            }`}
+            className={`text-7xl font-light tracking-tighter ${score >= 80 ? "text-zinc-900" : "text-zinc-700"
+              }`}
           >
             {score}%
           </span>
@@ -103,33 +125,114 @@ export default function ResultsDisplay({ result }: ResultsDisplayProps) {
             <h3 className="text-sm font-semibold text-zinc-900 mb-4">
               Upskilling Resources
             </h3>
-            <div className="grid grid-cols-1 gap-2">
-              {result.learning_resources.map((res, i) => (
-                <a
-                  key={i}
-                  href={res.resource}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-between p-3 rounded-xl border border-zinc-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/30 transition-all"
-                >
-                  <span className="text-sm font-medium text-zinc-700 group-hover:text-indigo-700 transition-colors">
-                    {res.skill}
-                  </span>
-                  <svg
-                    className="w-4 h-4 text-zinc-400 group-hover:text-indigo-400 transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            <div className="space-y-3">
+              {result.learning_resources.map((res, i) => {
+                const isExpanded = expandedSkills.has(res.skill);
+                return (
+                  <div
+                    key={i}
+                    className="group border border-zinc-200 rounded-lg bg-white overflow-hidden transition-all duration-200 hover:border-zinc-300"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M14 5l7 7m0 0l-7 7m7-7H3"
-                    />
-                  </svg>
-                </a>
-              ))}
+                    <button
+                      onClick={() => toggleSkill(res.skill)}
+                      className="w-full flex items-center justify-between p-4 text-left transition-colors hover:bg-zinc-50"
+                    >
+                      <span className="text-sm font-medium text-zinc-900 capitalize">
+                        {res.skill}
+                      </span>
+                      <svg
+                        className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isExpanded ? "rotate-180 text-zinc-600" : ""
+                          }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.5"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    <div
+                      className={`transition-all duration-300 ease-[cubic-bezier(0.87,0,0.13,1)] ${isExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+                        }`}
+                    >
+                      <div className="border-t border-zinc-100 bg-zinc-50/50">
+                        <div className="flex flex-col">
+                          {res.free_tutorial && (
+                            <a
+                              href={res.free_tutorial}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-white border-b border-zinc-100 last:border-0 transition-colors group/link"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-zinc-900">Free Tutorial</span>
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-500 border border-zinc-200">Video</span>
+                                </div>
+                                <p className="text-xs text-zinc-500 truncate group-hover/link:text-zinc-600 mt-0.5">
+                                  Start learning broadly
+                                </p>
+                              </div>
+                              <svg className="w-4 h-4 text-zinc-300 group-hover/link:text-zinc-400 group-hover/link:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+
+                          {res.official_resource && (
+                            <a
+                              href={res.official_resource}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-white border-b border-zinc-100 last:border-0 transition-colors group/link"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-zinc-900">Documentation</span>
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-500 border border-zinc-200">Official</span>
+                                </div>
+                                <p className="text-xs text-zinc-500 truncate group-hover/link:text-zinc-600 mt-0.5">
+                                  Deep dive into concepts
+                                </p>
+                              </div>
+                              <svg className="w-4 h-4 text-zinc-300 group-hover/link:text-zinc-400 group-hover/link:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+
+                          {res.explore && (
+                            <a
+                              href={res.explore}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-white border-b border-zinc-100 last:border-0 transition-colors group/link"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-zinc-900">Explore</span>
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-500 border border-zinc-200">Daily.dev</span>
+                                </div>
+                                <p className="text-xs text-zinc-500 truncate group-hover/link:text-zinc-600 mt-0.5">
+                                  Discover related content
+                                </p>
+                              </div>
+                              <svg className="w-4 h-4 text-zinc-300 group-hover/link:text-zinc-400 group-hover/link:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         </div>
