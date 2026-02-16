@@ -3,20 +3,18 @@ import gradio as gr
 from main import app as fastapi_app
 import uvicorn
 
-# Minimal Gradio interface
 def greet():
-    return "Welcome to MatchPoint Backend API. The API is running at /api/docs"
+    return "MatchPoint Backend API is running. Access API documentation at /docs"
 
 with gr.Blocks() as demo:
     gr.Markdown("# MatchPoint Resume-Job Matching API")
-    gr.Markdown("This is a backend service for matching resumes to job descriptions.")
-    gr.Markdown("API documentation available at [FastAPI Docs](/api/docs)")
-    greet_btn = gr.Button("Check Status")
+    gr.Markdown("Backend service for AI-powered resume-job matching analysis.")
+    gr.Markdown("API documentation: [FastAPI Docs](/docs)")
+    greet_btn = gr.Button("Check API Status")
     output = gr.Textbox(label="Status")
     greet_btn.click(fn=greet, outputs=output)
 
-# Mount FastAPI app
-app = gr.mount_gradio_app(fastapi_app, demo, path="/api")
+app = gr.mount_gradio_app(fastapi_app, demo, path="/")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
